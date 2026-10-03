@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     "django_filters",
     "apps.identity",
     "apps.learning",
+    "apps.question_bank",
+    "apps.attempts",
 ]
 
 AUTH_USER_MODEL = "identity.User"
