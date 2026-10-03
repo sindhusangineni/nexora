@@ -67,3 +67,25 @@ class TestRBAC:
 
         roles = get_user_roles(user)
         assert "superadmin" in roles
+
+    def test_superuser_without_superadmin_group_does_not_have_superadmin_permission(self, factory):
+        """
+        Verify that is_superuser=True alone does NOT grant the Nexora Superadmin application role.
+        Nexora RBAC strictly requires membership in the Superadmin Django Group.
+        """
+        user = User.objects.create_superuser(
+            email="superuser.only@example.com",
+            password="StrongPassword123!",
+        )
+        # Note: user is superuser, but NOT in Superadmin group
+        assert user.is_superuser is True
+        assert not user.groups.filter(name=ROLE_SUPERADMIN).exists()
+
+        request = factory.get("/")
+        request.user = user
+
+        is_superadmin_perm = IsSuperadmin()
+        assert is_superadmin_perm.has_permission(request, None) is False
+
+        roles = get_user_roles(user)
+        assert "superadmin" not in roles

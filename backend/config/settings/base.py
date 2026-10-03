@@ -29,7 +29,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    "django_filters",
     "apps.identity",
+    "apps.learning",
 ]
 
 AUTH_USER_MODEL = "identity.User"
@@ -114,7 +116,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "EXCEPTION_HANDLER": "apps.identity.views.exception_handler.custom_exception_handler",
+    "EXCEPTION_HANDLER": "shared.api.exception_handler.custom_exception_handler",
 }
 
 SIMPLE_JWT = {

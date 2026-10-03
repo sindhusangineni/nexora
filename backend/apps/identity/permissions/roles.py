@@ -25,8 +25,5 @@ class IsSuperadmin(BasePermission):
         return bool(
             request.user
             and request.user.is_authenticated
-            and (
-                request.user.is_superuser
-                or request.user.groups.filter(name=ROLE_SUPERADMIN).exists()
-            )
+            and request.user.groups.filter(name=ROLE_SUPERADMIN).exists()
         )
