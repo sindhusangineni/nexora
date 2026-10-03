@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "apps.identity",
 ]
 
@@ -111,6 +113,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.identity.views.exception_handler.custom_exception_handler",
 }
 
@@ -133,3 +136,27 @@ AUTH_COOKIE_HTTP_ONLY = True
 AUTH_COOKIE_SECURE = False
 AUTH_COOKIE_SAMESITE = "Lax"
 AUTH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60
+
+ENABLE_API_DOCS = env.bool("ENABLE_API_DOCS", default=True)
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Nexora Platform API",
+    "DESCRIPTION": (
+        "Enterprise Modular Monolith API for Nexora Learning Platform.\n\n"
+        "### Authentication\n"
+        "- **Access Tokens**: Short-lived JWTs passed in the `Authorization: Bearer <token>` header.\n"
+        "- **Refresh Tokens**: Longer-lived JWTs stored in secure HttpOnly cookies (`refresh_token`), "
+        "transmitted automatically by the browser."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": False,
+    },
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+}

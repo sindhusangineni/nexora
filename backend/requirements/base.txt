@@ -4,3 +4,5 @@ django-environ==0.14.0
 psycopg[binary]
 pytest
 pytest-django
+drf-spectacular==0.30.0
+drf-spectacular-sidecar==2026.10.1

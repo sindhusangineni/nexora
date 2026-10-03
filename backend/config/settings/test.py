@@ -3,6 +3,8 @@ from .base import *
 
 DEBUG = False
 
+ENABLE_API_DOCS = True
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

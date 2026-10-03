@@ -1,9 +1,12 @@
 from django.conf import settings
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.identity.serializers.errors import ErrorResponseSerializer
+from apps.identity.serializers.responses import MessageResponseSerializer
 from apps.identity.services.logout import LogoutService
 
 
@@ -13,6 +16,21 @@ class LogoutView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["Authentication"],
+        summary="Log out user session",
+        description=(
+            "Logs out the authenticated user session.\n\n"
+            "- Requires an active JWT access token in the `Authorization: Bearer <token>` header.\n"
+            "- Clears the HttpOnly `refresh_token` cookie.\n"
+            "- Does not require a request body."
+        ),
+        request=None,
+        responses={
+            status.HTTP_200_OK: MessageResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: ErrorResponseSerializer,
+        },
+    )
     def post(self, request):
         cookie_name = getattr(settings, "AUTH_COOKIE_NAME", "refresh_token")
         cookie_path = getattr(settings, "AUTH_COOKIE_PATH", "/api/v1/auth/")
