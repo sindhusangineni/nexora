@@ -1,15 +1,12 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-
-function HomePage() {
-    return <div>Nexora</div>;
-}
+import { BrowserRouter } from "react-router-dom";
+import { AppRoutes } from "./AppRoutes";
 
 export function AppRouter() {
     return (
         <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<HomePage />} />
-            </Routes>
+            <AppRoutes />
         </BrowserRouter>
     );
 }
+
+export { AppRoutes };
