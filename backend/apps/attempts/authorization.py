@@ -29,3 +29,20 @@ def validate_can_start_attempt(
 
     if context.actor_id != student_id:
         raise AttemptAuthorizationError("Students may only start attempts for their own student_id.")
+
+
+def get_authorization_context(user) -> AuthorizationContext:
+    """Construct an AuthorizationContext from a Django request user."""
+    if not user or not user.is_authenticated:
+        return AuthorizationContext(
+            actor_id=UUID("00000000-0000-0000-0000-000000000000"),
+            is_student=False,
+            is_superadmin=False,
+        )
+    user_groups = set(user.groups.values_list("name", flat=True))
+    return AuthorizationContext(
+        actor_id=user.id,
+        is_student="Student" in user_groups,
+        is_superadmin="Superadmin" in user_groups,
+    )
+

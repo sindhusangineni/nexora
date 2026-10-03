@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.learning",
     "apps.question_bank",
     "apps.attempts",
+    "apps.assessment",
 ]
 
 AUTH_USER_MODEL = "identity.User"
@@ -163,4 +164,10 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_DIST": "SIDECAR",
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
+    "ENUM_NAME_OVERRIDES": {
+        "AttemptStatusEnum": "apps.attempts.models.enums.AttemptStatus",
+        "AttemptResultStatusEnum": "apps.attempts.models.enums.AttemptResultStatus",
+        "AssessmentStatusEnum": "apps.assessment.models.enums.AssessmentStatus",
+        "AttemptsAssertionReasonEnum": "apps.attempts.models.enums.AssertionReasonResponse",
+    },
 }

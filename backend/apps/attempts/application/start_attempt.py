@@ -111,9 +111,12 @@ def start_attempt(
     student_id: UUID,
     paper_id: UUID,
     authorization_context: AuthorizationContext,
-    assessment_port: AssessmentPaperPort,
+    assessment_port: AssessmentPaperPort | None = None,
     now: datetime | None = None,
 ) -> Attempt:
+    if assessment_port is None:
+        from apps.attempts.adapters.assessment import AssessmentPaperDeliveryAdapter
+        assessment_port = AssessmentPaperDeliveryAdapter()
     """
     Use Case: Start a new attempt or idempotently return an existing active attempt.
 

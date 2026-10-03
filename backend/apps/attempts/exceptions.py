@@ -128,3 +128,17 @@ class InvalidResponseError(AttemptError):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+
+class InvalidEvaluationError(AttemptError):
+    """Raised when a descriptive item evaluation fails validation."""
+
+    def __init__(
+        self,
+        message: str = "Invalid evaluation parameters.",
+    ):
+        super().__init__(
+            code="INVALID_EVALUATION",
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+

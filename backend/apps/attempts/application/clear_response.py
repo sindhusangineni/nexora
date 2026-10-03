@@ -83,6 +83,9 @@ def clear_response(
             # Timed out! Preserve existing answers and commit timeout submission
             if scoring_policy is None:
                 raise ValueError("A ScoringPolicy must be explicitly provided for timeout submission.")
+            if question_bank_port is None:
+                from apps.attempts.adapters.question_bank import DatabaseQuestionBankAnswerKeyAdapter
+                question_bank_port = DatabaseQuestionBankAnswerKeyAdapter()
             execute_timeout_submission(
                 attempt=attempt,
                 now=current_now,

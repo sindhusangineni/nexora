@@ -112,7 +112,25 @@ def execute_submission(
                 evaluator_id=None,
             )
 
-    # Aggregate evaluations
+    # Recalculate result aggregate and section records
+    return recalculate_attempt_result(
+        attempt=attempt,
+        scoring_policy=scoring_policy,
+        now=now,
+    )
+
+
+def recalculate_attempt_result(
+    *,
+    attempt: Attempt,
+    scoring_policy: ScoringPolicy,
+    now: datetime,
+) -> tuple[Attempt, AttemptResult]:
+    """
+    Recalculates aggregate score, section scores, counters, and transitions
+    the Attempt and AttemptResult lifecycles based on pending evaluations.
+    """
+    items = list(attempt.items.all().order_by("presentation_order"))
     evaluations = list(AttemptEvaluation.objects.filter(attempt_item__attempt=attempt))
     total_questions = len(evaluations)
     correct_questions = sum(1 for e in evaluations if e.evaluation_state == EvaluationState.CORRECT)
@@ -136,21 +154,23 @@ def execute_submission(
         finalized_at = None
         attempt.status = AttemptStatus.SUBMITTED
 
-    attempt_result = AttemptResult.objects.create(
+    attempt_result, _ = AttemptResult.objects.select_for_update().update_or_create(
         attempt=attempt,
-        status=result_status,
-        raw_score=raw_score.quantize(Decimal("0.0001")),
-        score=score,
-        maximum_score=maximum_score.quantize(Decimal("0.01")),
-        percentage=percentage,
-        total_questions=total_questions,
-        attempted_questions=attempted_questions,
-        correct_questions=correct_questions,
-        incorrect_questions=incorrect_questions,
-        partially_correct_questions=partially_correct_questions,
-        unanswered_questions=unanswered_questions,
-        pending_evaluation_questions=pending_evaluation_questions,
-        finalized_at=finalized_at,
+        defaults={
+            "status": result_status,
+            "raw_score": raw_score.quantize(Decimal("0.0001")),
+            "score": score,
+            "maximum_score": maximum_score.quantize(Decimal("0.01")),
+            "percentage": percentage,
+            "total_questions": total_questions,
+            "attempted_questions": attempted_questions,
+            "correct_questions": correct_questions,
+            "incorrect_questions": incorrect_questions,
+            "partially_correct_questions": partially_correct_questions,
+            "unanswered_questions": unanswered_questions,
+            "pending_evaluation_questions": pending_evaluation_questions,
+            "finalized_at": finalized_at,
+        },
     )
 
     # Section-level aggregation
@@ -175,19 +195,21 @@ def execute_submission(
         sec_score, _ = scoring_policy.calculate_score(sec_raw, sec_max)
         sec_order = min(i.presentation_order for i in sec_items)
 
-        AttemptSectionResult.objects.create(
+        AttemptSectionResult.objects.update_or_create(
             attempt_result=attempt_result,
             assessment_section_id=section_id,
-            section_title_snapshot=f"Section {sec_order}",
-            section_order_snapshot=max(1, sec_order),
-            score=sec_score,
-            maximum_score=sec_max.quantize(Decimal("0.01")),
-            attempted_questions=sec_attempted,
-            correct_questions=sec_correct,
-            incorrect_questions=sec_incorrect,
-            partially_correct_questions=sec_partial,
-            unanswered_questions=sec_unanswered,
-            pending_evaluation_questions=sec_pending,
+            defaults={
+                "section_title_snapshot": f"Section {sec_order}",
+                "section_order_snapshot": max(1, sec_order),
+                "score": sec_score,
+                "maximum_score": sec_max.quantize(Decimal("0.01")),
+                "attempted_questions": sec_attempted,
+                "correct_questions": sec_correct,
+                "incorrect_questions": sec_incorrect,
+                "partially_correct_questions": sec_partial,
+                "unanswered_questions": sec_unanswered,
+                "pending_evaluation_questions": sec_pending,
+            },
         )
 
     attempt.save()

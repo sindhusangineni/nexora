@@ -14,7 +14,12 @@ def validate_mcq_response(
     if not choice_ids or len(choice_ids) != 1:
         raise InvalidResponseError("MCQ requires exactly one selected choice.")
 
-    selected_choice_id = choice_ids[0]
+    raw_choice = choice_ids[0]
+    try:
+        selected_choice_id = raw_choice if isinstance(raw_choice, UUID) else UUID(str(raw_choice))
+    except (ValueError, TypeError):
+        raise InvalidResponseError("Selected choice is not a valid UUID.")
+
     valid_choice_ids = set(attempt_item.choices.values_list("choice_id", flat=True))
 
     if selected_choice_id not in valid_choice_ids:
@@ -31,15 +36,22 @@ def validate_multiple_select_response(
     if not choice_ids or len(choice_ids) < 1:
         raise InvalidResponseError("Multiple select requires at least one selected choice.")
 
-    if len(choice_ids) != len(set(choice_ids)):
+    parsed_choice_ids = []
+    for c in choice_ids:
+        try:
+            parsed_choice_ids.append(c if isinstance(c, UUID) else UUID(str(c)))
+        except (ValueError, TypeError):
+            raise InvalidResponseError(f"Choice '{c}' is not a valid UUID.")
+
+    if len(parsed_choice_ids) != len(set(parsed_choice_ids)):
         raise InvalidResponseError("Duplicate choices selected.")
 
     valid_choice_ids = set(attempt_item.choices.values_list("choice_id", flat=True))
-    for choice_id in choice_ids:
+    for choice_id in parsed_choice_ids:
         if choice_id not in valid_choice_ids:
             raise InvalidResponseError(f"Selected choice {choice_id} does not belong to this item.")
 
-    return choice_ids
+    return parsed_choice_ids
 
 
 def validate_true_false_response(

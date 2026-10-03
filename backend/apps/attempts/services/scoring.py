@@ -78,3 +78,20 @@ class ZeroFloorSectionScoringPolicy:
         else:
             percentage = ((score / maximum_score) * Decimal("100")).quantize(Decimal("0.01"))
         return score, percentage
+
+
+def get_scoring_policy(policy_name: str) -> ScoringPolicy:
+    """
+    Resolves the appropriate ScoringPolicy implementation matching an Attempt's
+    configured score_floor_policy.
+    """
+    from apps.attempts.models.enums import ScoreFloorPolicy
+
+    if policy_name == ScoreFloorPolicy.ZERO_FLOOR_TOTAL:
+        return ZeroFloorTotalScoringPolicy()
+    elif policy_name == ScoreFloorPolicy.ZERO_FLOOR_SECTION:
+        return ZeroFloorSectionScoringPolicy()
+    elif policy_name == ScoreFloorPolicy.UNRESTRICTED:
+        return UnrestrictedScoringPolicy()
+    raise ValueError(f"Unknown scoring policy: {policy_name}")
+
