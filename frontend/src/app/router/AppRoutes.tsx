@@ -7,10 +7,12 @@ import { ProtectedRoute } from "@/app/router/guards/ProtectedRoute";
 import { PublicRoute } from "@/app/router/guards/PublicRoute";
 import { RoleRoute } from "@/app/router/guards/RoleRoute";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminLearningPage } from "@/pages/admin/AdminLearningPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { NotFoundPage } from "@/pages/common/NotFoundPage";
 import { PlaceholderPage } from "@/pages/common/PlaceholderPage";
 import { StudentDashboardPage } from "@/pages/student/StudentDashboardPage";
+import { StudentLearningPage } from "@/pages/student/StudentLearningPage";
 
 export function AppRoutes() {
     return (
@@ -29,10 +31,7 @@ export function AppRoutes() {
                     <Route path="/student" element={<StudentLayout />}>
                         <Route index element={<Navigate to="/student/dashboard" replace />} />
                         <Route path="dashboard" element={<StudentDashboardPage />} />
-                        <Route
-                            path="learning"
-                            element={<PlaceholderPage title="Curriculum & Learning" />}
-                        />
+                        <Route path="learning" element={<StudentLearningPage />} />
                         <Route
                             path="assessments"
                             element={<PlaceholderPage title="Available Assessments" />}
@@ -51,10 +50,7 @@ export function AppRoutes() {
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<Navigate to="/admin/dashboard" replace />} />
                         <Route path="dashboard" element={<AdminDashboardPage />} />
-                        <Route
-                            path="learning"
-                            element={<PlaceholderPage title="Learning Taxonomy Management" />}
-                        />
+                        <Route path="learning" element={<AdminLearningPage />} />
                         <Route
                             path="question-bank"
                             element={<PlaceholderPage title="Question Bank Administration" />}

@@ -160,6 +160,69 @@ describe("App Router & Route Protection", () => {
         expect(screen.getByRole("heading", { name: /superadmin administration/i })).toBeInTheDocument();
     });
 
+    it("allows authenticated student to access /student/learning", async () => {
+        const studentUser: AuthUser = {
+            id: "student-1",
+            email: "student@example.com",
+            email_verified: true,
+            roles: ["student"],
+        };
+
+        renderWithAuth("/student/learning", {
+            isAuthenticated: true,
+            user: studentUser,
+            status: "authenticated",
+            isStudent: true,
+            isSuperadmin: false,
+        });
+
+        expect(
+            screen.getByRole("heading", { name: /curriculum & learning/i }),
+        ).toBeInTheDocument();
+    });
+
+    it("denies authenticated student access to /admin/learning and redirects to student home", () => {
+        const studentUser: AuthUser = {
+            id: "student-1",
+            email: "student@example.com",
+            email_verified: true,
+            roles: ["student"],
+        };
+
+        renderWithAuth("/admin/learning", {
+            isAuthenticated: true,
+            user: studentUser,
+            status: "authenticated",
+            isStudent: true,
+            isSuperadmin: false,
+        });
+
+        expect(
+            screen.getByRole("heading", { name: /student dashboard/i }),
+        ).toBeInTheDocument();
+    });
+
+    it("allows authenticated superadmin to access /admin/learning", async () => {
+        const adminUser: AuthUser = {
+            id: "admin-1",
+            email: "admin@example.com",
+            email_verified: true,
+            roles: ["superadmin"],
+        };
+
+        renderWithAuth("/admin/learning", {
+            isAuthenticated: true,
+            user: adminUser,
+            status: "authenticated",
+            isStudent: false,
+            isSuperadmin: true,
+        });
+
+        expect(
+            screen.getByRole("heading", { name: /learning taxonomy management/i }),
+        ).toBeInTheDocument();
+    });
+
     it("renders 404 page for unknown routes", () => {
         renderWithAuth("/unknown-non-existent-route");
 
@@ -167,3 +230,4 @@ describe("App Router & Route Protection", () => {
         expect(screen.getByText(/page not found/i)).toBeInTheDocument();
     });
 });
+
