@@ -3,18 +3,21 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.attempts.application import cancel_attempt, evaluate_descriptive_item
+from apps.attempts.application import cancel_attempt, evaluate_descriptive_item, get_attempt_review
 from apps.attempts.authorization import get_authorization_context
 from apps.attempts.exceptions import AttemptNotFoundError
 from apps.attempts.models import Attempt
-from apps.attempts.permissions import IsSuperadminOnly
+from apps.attempts.permissions import IsStudentOrSuperadmin, IsSuperadminOnly
 from apps.attempts.serializers import (
+    AdminAttemptReviewSerializer,
     AttemptEvaluationReviewSerializer,
     AttemptReviewSerializer,
     CancelAttemptRequestSerializer,
     EvaluateDescriptiveRequestSerializer,
+    StudentAttemptReviewSerializer,
 )
 from shared.api.errors import ErrorResponseSerializer
+
 
 
 class AttemptItemEvaluateView(APIView):
@@ -88,50 +91,45 @@ class AttemptCancelView(APIView):
             authorization=auth_context,
         )
 
-        attempt = (
-            Attempt.objects.filter(id=attempt.id)
-            .prefetch_related(
-                "items__response__choices",
-                "items__response__matches",
-                "items__evaluation",
-                "result__section_results",
-            )
-            .first()
+        review_data = get_attempt_review(
+            attempt_id=attempt.id,
+            authorization=auth_context,
         )
-        return Response(AttemptReviewSerializer(attempt).data, status=status.HTTP_200_OK)
+        return Response(AdminAttemptReviewSerializer(review_data).data, status=status.HTTP_200_OK)
 
 
 class AttemptReviewView(APIView):
     """
-    Superadmin full review of an attempt.
-    Includes item evaluations, student answers, and scores.
+    Review an attempt with question-by-question breakdown.
+    Accessible to authorized students (their own attempt) and Superadmins (any attempt).
+    Enforces security boundary around answer keys and explanations.
     """
 
-    permission_classes = [IsSuperadminOnly]
+    permission_classes = [IsStudentOrSuperadmin]
 
     @extend_schema(
         summary="Review an attempt",
-        description="Retrieves complete attempt details with student responses, evaluations, and results for Superadmin auditing.",
+        description="Retrieves question-by-question attempt review with responses, evaluations, and scorecards. Answer keys and explanations are strictly withheld unless authorized or result is FINAL.",
         responses={
-            200: AttemptReviewSerializer,
+            200: StudentAttemptReviewSerializer,
+            400: OpenApiResponse(response=ErrorResponseSerializer, description="Attempt still in progress"),
             401: OpenApiResponse(response=ErrorResponseSerializer, description="Authentication required"),
-            403: OpenApiResponse(response=ErrorResponseSerializer, description="Superadmin role required"),
+            403: OpenApiResponse(response=ErrorResponseSerializer, description="Forbidden"),
             404: OpenApiResponse(response=ErrorResponseSerializer, description="Attempt not found"),
         },
         tags=["Attempts"],
     )
     def get(self, request, attempt_id):
-        attempt = (
-            Attempt.objects.filter(id=attempt_id)
-            .prefetch_related(
-                "items__response__choices",
-                "items__response__matches",
-                "items__evaluation",
-                "result__section_results",
-            )
-            .first()
+        auth_context = get_authorization_context(request.user)
+        review_data = get_attempt_review(
+            attempt_id=attempt_id,
+            authorization=auth_context,
         )
-        if attempt is None:
-            raise AttemptNotFoundError(f"Attempt '{attempt_id}' was not found.")
 
-        return Response(AttemptReviewSerializer(attempt).data, status=status.HTTP_200_OK)
+        if auth_context.is_superadmin:
+            serializer = AdminAttemptReviewSerializer(review_data)
+        else:
+            serializer = StudentAttemptReviewSerializer(review_data)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

@@ -21,7 +21,7 @@ const SESSION_STORAGE_KEY = "nexora_user_session";
 
 function loadUserSession(): AuthUser | null {
     try {
-        const item = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        const item = sessionStorage.getItem(SESSION_STORAGE_KEY) || localStorage.getItem(SESSION_STORAGE_KEY);
         return item ? (JSON.parse(item) as AuthUser) : null;
     } catch {
         return null;
@@ -32,17 +32,19 @@ function saveUserSession(user: AuthUser | null): void {
     try {
         if (user) {
             sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
         } else {
             sessionStorage.removeItem(SESSION_STORAGE_KEY);
+            localStorage.removeItem(SESSION_STORAGE_KEY);
         }
     } catch {
-        // Ignore session storage errors
+        // Ignore storage errors
     }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(() => loadUserSession());
-    const [status, setStatus] = useState<AuthStatus>(() => (loadUserSession() ? "authenticated" : "idle"));
+    const [status, setStatus] = useState<AuthStatus>("refreshing");
     const queryClient = useQueryClient();
 
     const handleSessionExpired = useCallback(() => {

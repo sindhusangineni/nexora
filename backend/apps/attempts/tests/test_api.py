@@ -334,3 +334,191 @@ class TestAttemptsAPI:
         assert resp_admin.status_code == status.HTTP_200_OK
         assert resp_admin.json()["id"] == attempt_id
         assert len(resp_admin.json()["items"]) == 1
+
+    def test_attempt_history_authentication_required(self, api_client):
+        resp = api_client.get("/api/v1/attempts/")
+        assert resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_attempt_history_empty_structure(self, api_client, student_user):
+        api_client.force_authenticate(user=student_user)
+        resp = api_client.get("/api/v1/attempts/")
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert data["count"] == 0
+        assert data["next"] is None
+        assert data["previous"] is None
+        assert data["results"] == []
+
+    def test_attempt_history_student_isolation(self, api_client, student_user, other_student_user):
+        # Create attempt for student 1
+        api_client.force_authenticate(user=student_user)
+        resp1 = api_client.post("/api/v1/attempts/", {"assessment_paper_id": str(self.paper.id)})
+        assert resp1.status_code == status.HTTP_201_CREATED
+        att1_id = resp1.json()["id"]
+
+        # Create attempt for student 2 on self.paper (different student, same paper is valid)
+        api_client.force_authenticate(user=other_student_user)
+        resp2 = api_client.post("/api/v1/attempts/", {"assessment_paper_id": str(self.paper.id)})
+        assert resp2.status_code == status.HTTP_201_CREATED
+        att2_id = resp2.json()["id"]
+
+        # Student 1 only sees att1
+        api_client.force_authenticate(user=student_user)
+        h1 = api_client.get("/api/v1/attempts/").json()
+        assert h1["count"] == 1
+        assert h1["results"][0]["id"] == att1_id
+
+        # Student 1 supplying query param ?student_id=other is ignored and still scoped
+        h1_tampered = api_client.get(f"/api/v1/attempts/?student_id={other_student_user.id}").json()
+        assert h1_tampered["count"] == 1
+        assert h1_tampered["results"][0]["id"] == att1_id
+
+        # Student 2 only sees att2
+        api_client.force_authenticate(user=other_student_user)
+        h2 = api_client.get("/api/v1/attempts/").json()
+        assert h2["count"] == 1
+        assert h2["results"][0]["id"] == att2_id
+
+    def test_attempt_history_ordering_and_pagination(self, api_client, student_user):
+        from datetime import timedelta
+        base_time = datetime(2026, 10, 1, 10, 0, 0, tzinfo=timezone.utc)
+
+        # Create 3 attempts manually for student
+        for idx in range(3):
+            att = Attempt.objects.create(
+                student_id=student_user.id,
+                assessment_paper_id=self.paper.id,
+                attempt_number=idx + 1,
+                status=AttemptStatus.IN_PROGRESS,
+                duration_seconds=3600,
+                started_at=base_time + timedelta(hours=idx),
+                expires_at=base_time + timedelta(hours=idx, seconds=3600),
+            )
+
+        api_client.force_authenticate(user=student_user)
+        resp = api_client.get("/api/v1/attempts/?page_size=2")
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert data["count"] == 3
+        assert len(data["results"]) == 2
+        assert data["next"] is not None
+
+        # Verify newest started_at first
+        first_attempt = data["results"][0]
+        second_attempt = data["results"][1]
+        assert first_attempt["attempt_number"] == 3
+        assert second_attempt["attempt_number"] == 2
+
+    def test_attempt_history_result_states_and_filtering(self, api_client, student_user):
+        from datetime import timedelta
+        base_time = datetime(2026, 10, 2, 10, 0, 0, tzinfo=timezone.utc)
+
+        # 1. In-progress attempt without result
+        att_active = Attempt.objects.create(
+            student_id=student_user.id,
+            assessment_paper_id=self.paper.id,
+            attempt_number=1,
+            status=AttemptStatus.IN_PROGRESS,
+            duration_seconds=3600,
+            started_at=base_time,
+            expires_at=base_time + timedelta(hours=1),
+        )
+
+        # 2. Submitted attempt with PENDING result
+        att_pending = Attempt.objects.create(
+            student_id=student_user.id,
+            assessment_paper_id=self.paper.id,
+            attempt_number=2,
+            status=AttemptStatus.SUBMITTED,
+            duration_seconds=3600,
+            started_at=base_time + timedelta(hours=1),
+            expires_at=base_time + timedelta(hours=2),
+            submitted_at=base_time + timedelta(hours=1, minutes=30),
+            submission_reason="MANUAL",
+        )
+        AttemptResult.objects.create(
+            attempt=att_pending,
+            status=AttemptResultStatus.PENDING,
+            maximum_score=Decimal("10.00"),
+            total_questions=5,
+            attempted_questions=4,
+            correct_questions=2,
+            incorrect_questions=2,
+            partially_correct_questions=0,
+            unanswered_questions=1,
+            pending_evaluation_questions=0,
+        )
+
+        # 3. Evaluated attempt with FINAL result
+        att_final = Attempt.objects.create(
+            student_id=student_user.id,
+            assessment_paper_id=self.paper.id,
+            attempt_number=3,
+            status=AttemptStatus.EVALUATED,
+            duration_seconds=3600,
+            started_at=base_time + timedelta(hours=2),
+            expires_at=base_time + timedelta(hours=3),
+            submitted_at=base_time + timedelta(hours=2, minutes=45),
+            submission_reason="MANUAL",
+        )
+        AttemptResult.objects.create(
+            attempt=att_final,
+            status=AttemptResultStatus.FINAL,
+            score=Decimal("8.00"),
+            maximum_score=Decimal("10.00"),
+            percentage=Decimal("80.00"),
+            total_questions=5,
+            attempted_questions=5,
+            correct_questions=4,
+            incorrect_questions=1,
+            partially_correct_questions=0,
+            unanswered_questions=0,
+            pending_evaluation_questions=0,
+            finalized_at=base_time + timedelta(hours=2, minutes=50),
+        )
+
+        api_client.force_authenticate(user=student_user)
+        all_resp = api_client.get("/api/v1/attempts/").json()
+        assert all_resp["count"] == 3
+
+        # Check final attempt values
+        final_item = next(r for r in all_resp["results"] if r["id"] == str(att_final.id))
+        assert final_item["status"] == "EVALUATED"
+        assert final_item["result_status"] == "FINAL"
+        assert final_item["score"] == "8.00"
+        assert final_item["maximum_score"] == "10.00"
+        assert final_item["percentage"] == "80.00"
+        assert final_item["total_questions"] == 5
+
+        # Check pending attempt values
+        pending_item = next(r for r in all_resp["results"] if r["id"] == str(att_pending.id))
+        assert pending_item["status"] == "SUBMITTED"
+        assert pending_item["result_status"] == "PENDING"
+        assert pending_item["score"] is None
+        assert pending_item["maximum_score"] == "10.00"
+        assert pending_item["percentage"] is None
+
+        # Check active attempt values
+        active_item = next(r for r in all_resp["results"] if r["id"] == str(att_active.id))
+        assert active_item["status"] == "IN_PROGRESS"
+        assert active_item["result_status"] is None
+        assert active_item["score"] is None
+
+        # Test status filter: ?status=EVALUATED
+        eval_only = api_client.get("/api/v1/attempts/?status=EVALUATED").json()
+        assert eval_only["count"] == 1
+        assert eval_only["results"][0]["id"] == str(att_final.id)
+
+    def test_attempt_history_superadmin_access(self, api_client, student_user, superadmin_user):
+        # Create attempt for student
+        api_client.force_authenticate(user=student_user)
+        api_client.post("/api/v1/attempts/", {"assessment_paper_id": str(self.paper.id)})
+
+        # Superadmin accessing /attempts/ gets only their own attempts (0)
+        api_client.force_authenticate(user=superadmin_user)
+        resp = api_client.get("/api/v1/attempts/")
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert data["count"] == 0
+        assert data["results"] == []
+

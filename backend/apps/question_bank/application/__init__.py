@@ -14,6 +14,11 @@ from .lifecycle import (
     submit_for_review,
     submit_question_version_for_review,
 )
+from .question_import import (
+    execute_question_import,
+    generate_csv_template,
+    preview_question_import,
+)
 from .questions import (
     create_question,
     create_question_version,
@@ -25,6 +30,10 @@ __all__ = [
     "create_question",
     "create_question_version",
     "update_question_version",
+    # Import operations
+    "preview_question_import",
+    "execute_question_import",
+    "generate_csv_template",
     # Lifecycle operations
     "submit_question_version_for_review",
     "submit_for_review",

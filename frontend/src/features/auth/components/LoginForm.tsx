@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/shared/ui/Button";
 import { parseApiError, type ApiError } from "@/lib/api";
@@ -147,6 +147,18 @@ export function LoginForm() {
             >
                 {isLoading ? "Signing in..." : "Sign in"}
             </Button>
+
+            <div className="text-center pt-2">
+                <p className="text-sm text-foreground-muted">
+                    Don't have an account?{" "}
+                    <Link
+                        to="/signup"
+                        className="font-semibold text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline"
+                    >
+                        Create account
+                    </Link>
+                </p>
+            </div>
         </form>
     );
 }

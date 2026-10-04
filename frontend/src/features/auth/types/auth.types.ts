@@ -12,6 +12,17 @@ export interface LoginCredentials {
     password: string;
 }
 
+export interface RegisterPayload {
+    email: string;
+    password: string;
+    password_confirmation: string;
+}
+
+export interface RegisterResponse {
+    message: string;
+    user: AuthUser;
+}
+
 export interface LoginResponse {
     access: string;
     user: AuthUser;

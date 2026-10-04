@@ -248,7 +248,7 @@ export function AdminTaxonomyManager() {
                                                     {domain.name}
                                                 </span>
                                                 <div
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1"
+                                                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity flex items-center space-x-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <button
@@ -259,7 +259,7 @@ export function AdminTaxonomyManager() {
                                                             setEditingDomain(domain);
                                                             setDomainModalOpen(true);
                                                         }}
-                                                        className="text-xs p-1 text-foreground-muted hover:text-foreground rounded"
+                                                        className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-foreground-muted hover:text-foreground rounded cursor-pointer"
                                                     >
                                                         &#9998;
                                                     </button>
@@ -276,7 +276,7 @@ export function AdminTaxonomyManager() {
                                                                 errorMessage: null,
                                                             });
                                                         }}
-                                                        className="text-xs p-1 text-danger hover:bg-red-50 rounded"
+                                                        className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-danger hover:bg-red-50 rounded cursor-pointer"
                                                     >
                                                         &#128465;
                                                     </button>
@@ -374,7 +374,7 @@ export function AdminTaxonomyManager() {
                                                             </span>
                                                         </div>
                                                         <div
-                                                            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1"
+                                                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity flex items-center space-x-1"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
                                                             <button
@@ -385,7 +385,7 @@ export function AdminTaxonomyManager() {
                                                                     setEditingSubject(subject);
                                                                     setSubjectModalOpen(true);
                                                                 }}
-                                                                className="text-xs p-1 text-foreground-muted hover:text-foreground rounded"
+                                                                className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-foreground-muted hover:text-foreground rounded cursor-pointer"
                                                             >
                                                                 &#9998;
                                                             </button>
@@ -402,7 +402,7 @@ export function AdminTaxonomyManager() {
                                                                         errorMessage: null,
                                                                     });
                                                                 }}
-                                                                className="text-xs p-1 text-danger hover:bg-red-50 rounded"
+                                                                className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-danger hover:bg-red-50 rounded cursor-pointer"
                                                             >
                                                                 &#128465;
                                                             </button>
@@ -494,7 +494,7 @@ export function AdminTaxonomyManager() {
                                                             </span>
                                                         </div>
                                                         <div
-                                                            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1"
+                                                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity flex items-center space-x-1"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
                                                             <button
@@ -505,7 +505,7 @@ export function AdminTaxonomyManager() {
                                                                     setEditingChapter(chapter);
                                                                     setChapterModalOpen(true);
                                                                 }}
-                                                                className="text-xs p-1 text-foreground-muted hover:text-foreground rounded"
+                                                                className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-foreground-muted hover:text-foreground rounded cursor-pointer"
                                                             >
                                                                 &#9998;
                                                             </button>
@@ -522,7 +522,7 @@ export function AdminTaxonomyManager() {
                                                                         errorMessage: null,
                                                                     });
                                                                 }}
-                                                                className="text-xs p-1 text-danger hover:bg-red-50 rounded"
+                                                                className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-danger hover:bg-red-50 rounded cursor-pointer"
                                                             >
                                                                 &#128465;
                                                             </button>
@@ -606,7 +606,7 @@ export function AdminTaxonomyManager() {
                                                             {topic.name}
                                                         </span>
                                                     </div>
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
+                                                    <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity flex items-center space-x-1">
                                                         <button
                                                             type="button"
                                                             title="Edit Topic"
@@ -615,7 +615,7 @@ export function AdminTaxonomyManager() {
                                                                 setEditingTopic(topic);
                                                                 setTopicModalOpen(true);
                                                             }}
-                                                            className="text-xs p-1 text-foreground-muted hover:text-foreground rounded"
+                                                            className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-foreground-muted hover:text-foreground rounded cursor-pointer"
                                                         >
                                                             &#9998;
                                                         </button>
@@ -632,7 +632,7 @@ export function AdminTaxonomyManager() {
                                                                     errorMessage: null,
                                                                 });
                                                             }}
-                                                            className="text-xs p-1 text-danger hover:bg-red-50 rounded"
+                                                            className="p-1.5 sm:p-1 min-w-[32px] min-h-[32px] flex items-center justify-center text-sm sm:text-xs text-danger hover:bg-red-50 rounded cursor-pointer"
                                                         >
                                                             &#128465;
                                                         </button>

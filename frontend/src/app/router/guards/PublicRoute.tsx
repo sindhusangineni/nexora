@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/shared/components/LoadingScreen";
 export function PublicRoute() {
     const { status, isAuthenticated, isSuperadmin } = useAuth();
 
-    if (status === "refreshing" || status === "authenticating") {
+    if (status === "refreshing" || status === "authenticating" || status === "idle") {
         return <LoadingScreen message="Checking session..." />;
     }
 

@@ -1,4 +1,4 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,9 +16,12 @@ from apps.attempts.exceptions import (
     InvalidAttemptStateError,
 )
 from apps.attempts.models import Attempt, AttemptResult
+from apps.attempts.models.enums import AttemptStatus
+from apps.attempts.pagination import AttemptPagination
 from apps.attempts.permissions import IsStudentOnly, IsStudentOrSuperadmin
 from apps.attempts.serializers import (
     AttemptDeliverySerializer,
+    AttemptHistorySummarySerializer,
     AttemptResponseDeliverySerializer,
     AttemptResultSerializer,
     SaveResponseRequestSerializer,
@@ -29,11 +32,64 @@ from shared.api.errors import ErrorResponseSerializer
 
 class AttemptListCreateView(APIView):
     """
-    Start or resume an attempt for an assessment paper.
-    Student-only access.
+    List student attempt history or start a new attempt for an assessment paper.
     """
 
-    permission_classes = [IsStudentOnly]
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsStudentOnly()]
+        return [IsStudentOrSuperadmin()]
+
+    @extend_schema(
+        summary="List student attempt history",
+        description="Returns paginated attempt history for the authenticated student, ordered newest first.",
+        parameters=[
+            OpenApiParameter(
+                name="status",
+                description="Filter by attempt lifecycle status (IN_PROGRESS, SUBMITTED, EVALUATED, CANCELLED)",
+                required=False,
+                type=str,
+                enum=AttemptStatus.values,
+            ),
+            OpenApiParameter(
+                name="page",
+                description="A page number within the paginated result set.",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                description="Number of results to return per page (max 100).",
+                required=False,
+                type=int,
+            ),
+        ],
+        responses={
+            200: AttemptHistorySummarySerializer(many=True),
+            401: OpenApiResponse(response=ErrorResponseSerializer, description="Authentication required"),
+            403: OpenApiResponse(response=ErrorResponseSerializer, description="Forbidden"),
+        },
+        tags=["Attempts"],
+    )
+    def get(self, request):
+        queryset = (
+            Attempt.objects.filter(student_id=request.user.id)
+            .select_related("result")
+            .order_by("-started_at", "-created_at")
+        )
+
+        status_param = request.query_params.get("status")
+        if status_param and status_param in AttemptStatus.values:
+            queryset = queryset.filter(status=status_param)
+
+        paginator = AttemptPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        if page is not None:
+            serializer = AttemptHistorySummarySerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = AttemptHistorySummarySerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Start or resume an assessment attempt",
@@ -282,8 +338,12 @@ class AttemptResultView(APIView):
         if not auth_context.is_superadmin and attempt.student_id != auth_context.actor_id:
             raise AttemptAuthorizationError("Students may only view their own test results.")
 
+        if attempt.status == AttemptStatus.IN_PROGRESS:
+            raise InvalidAttemptStateError("Cannot retrieve result for an attempt that is still in progress.")
+
         result = (
             AttemptResult.objects.filter(attempt=attempt)
+            .select_related("attempt")
             .prefetch_related("section_results")
             .first()
         )
@@ -291,3 +351,4 @@ class AttemptResultView(APIView):
             raise InvalidAttemptStateError("Result for this attempt is not available.")
 
         return Response(AttemptResultSerializer(result).data, status=status.HTTP_200_OK)
+

@@ -7,7 +7,7 @@ export function ProtectedRoute() {
     const { status, isAuthenticated } = useAuth();
     const location = useLocation();
 
-    if (status === "refreshing" || status === "authenticating") {
+    if (status === "refreshing" || status === "authenticating" || status === "idle") {
         return <LoadingScreen message="Verifying session..." />;
     }
 

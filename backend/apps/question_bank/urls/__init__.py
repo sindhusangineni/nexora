@@ -1,6 +1,10 @@
 from django.urls import path
 
-from apps.question_bank.views import QuestionVersionViewSet, QuestionViewSet
+from apps.question_bank.views import (
+    QuestionImportViewSet,
+    QuestionVersionViewSet,
+    QuestionViewSet,
+)
 
 question_list = QuestionViewSet.as_view({
     "get": "list",
@@ -31,7 +35,22 @@ version_archive = QuestionVersionViewSet.as_view({
     "post": "archive",
 })
 
+import_preview = QuestionImportViewSet.as_view({
+    "post": "preview",
+})
+import_execute = QuestionImportViewSet.as_view({
+    "post": "execute",
+})
+import_template = QuestionImportViewSet.as_view({
+    "get": "template",
+})
+
 urlpatterns = [
+    # Bulk import endpoints
+    path("imports/preview/", import_preview, name="question-import-preview"),
+    path("imports/execute/", import_execute, name="question-import-execute"),
+    path("imports/template/", import_template, name="question-import-template"),
+    # Question aggregates
     path("questions/", question_list, name="question-list"),
     path("questions/<uuid:question_id>/", question_detail, name="question-detail"),
     path(
