@@ -15,7 +15,11 @@ if (!/^[a-z][a-z0-9-]*$/.test(featureName)) {
     process.exit(1);
 }
 
-const featurePath = path.resolve("src/features", featureName);
+const featurePath = path.resolve(
+    import.meta.dirname,
+    "../src/features",
+    featureName,
+);
 
 if (existsSync(featurePath)) {
     console.error(`Feature already exists: ${featureName}`);
@@ -26,12 +30,8 @@ const directories = [
     "api",
     "components",
     "hooks",
-    "mutations",
-    "pages",
-    "queries",
-    "schemas",
     "types",
-    "tests",
+    "__tests__",
 ];
 
 mkdirSync(featurePath, { recursive: true });
